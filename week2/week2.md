@@ -671,7 +671,8 @@ https://cg.catholic.ac.kr/~mgchoi/CG/demos/d02-transform-lab.html?d=eyJyYW5nZSI6
 
 7. 결과 화면
 
-![Task 3 — 실제 비율로 배치한 지구와 인공위성](images/task3.png)
+![Task 3 — 보는 사람을 위한 표현](images/task3.png)
+
 
 
 8. 실행화면
