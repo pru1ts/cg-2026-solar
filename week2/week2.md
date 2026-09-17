@@ -664,6 +664,7 @@ ISS:
     }
   ]
 }
+```
 
 6. 공유 링크
 
@@ -675,5 +676,5 @@ https://cg.catholic.ac.kr/~mgchoi/CG/demos/d02-transform-lab.html?d=eyJyYW5nZSI6
 
 
 
-8. 실행화면
+8. 실행화면 [Task 3 실행하기]
 https://pru1ts.github.io/cg-2026-solar/week2/task3.html
