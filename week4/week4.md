@@ -8,10 +8,10 @@
 ### GitHub Pages 실행 주소
 
 - Baseline  
-  `https://<GitHub-ID>.github.io/cg-2026-solar/week4/baseline/`
+  https://pru1ts.github.io/cg-2026-solar/week4/baseline/
 
 - Improved  
-  `https://<GitHub-ID>.github.io/cg-2026-solar/week4/improved/`
+  https://pru1ts.github.io/cg-2026-solar/week4/improved/
 
 ※ 최종 제출 전에 `<GitHub-ID>` 부분을 실제 GitHub 아이디로 변경한다.
 
@@ -610,7 +610,7 @@ Baseline에서는 원하는 관찰 위치를 찾기 위해 회전, 확대·축�
 
 따라서 Improved에서는 단순히 명판을 더 크게 보여 주는 것뿐만 아니라,
 관찰 위치를 찾기 위해 필요한 반복적인 카메라 조작 자체가 감소하였다.
-
+=
 
 ---
 
