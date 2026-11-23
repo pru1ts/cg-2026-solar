@@ -3,16 +3,34 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>5주차 실습 1 — 출발점</title>
+<title>5주차 실습 2 — 세 광원의 밤</title>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0f16; }
   canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
   #hint { position: fixed; left: 12px; bottom: 12px; margin: 0;
           color: #9fb0c8; font: 12px/1.6 ui-monospace, Menlo, Consolas, monospace; }
+  #lighting-info {
+    position: fixed; top: 14px; left: 14px; z-index: 5;
+    width: min(350px, calc(100vw - 52px));
+    padding: 12px 14px; border: 1px solid rgba(150, 170, 195, 0.25);
+    border-radius: 8px; background: rgba(5, 9, 17, 0.86);
+    color: #dce5f2; font: 12px/1.75 ui-monospace, Menlo, Consolas, monospace;
+    pointer-events: none;
+  }
+  #lighting-info .heading { color: #f0d9a1; font-weight: 700; margin-bottom: 4px; }
+  #lighting-info .key { color: #f2d58a; font-weight: 700; }
+  #lighting-info .muted { color: #91a0b4; margin-top: 5px; }
 </style>
 </head>
 <body>
 <canvas id="glcanvas"></canvas>
+<div id="lighting-info">
+  <div class="heading">심연의 얼음 위성 — 조명 안내</div>
+  <div><span class="key">1 · POINT</span> 청록색 근거리 광원 — 가까운 표면을 비춤</div>
+  <div><span class="key">2 · DIRECTIONAL</span> 은백색 별빛 — 일정한 방향에서 비춤</div>
+  <div><span class="key">3 · SPOT</span> 보라색 집중광 — 한쪽 표면을 비춤</div>
+  <div class="muted">숫자키 1·2·3 = 각 광원 켜기/끄기</div>
+</div>
 <p id="hint">드래그 = 시점 회전 · 휠 = 확대/축소</p>
 
 <script>
@@ -115,6 +133,20 @@ uniform vec3  uViewPos;               // 카메라의 세계 좌표
 uniform float uShininess;
 uniform bool  uEmissive;              // 태양처럼 스스로 빛나는 물체인가
 
+// ★ 실습 2 — 서로 다른 세 종류의 광원
+uniform vec3 uPointPos;
+uniform vec3 uPointColor;
+uniform bool uPointOn;
+
+uniform vec3 uDirDirection;
+uniform vec3 uDirColor;
+uniform bool uDirOn;
+
+uniform vec3 uSpotPos;
+uniform vec3 uSpotDirection;
+uniform vec3 uSpotColor;
+uniform bool uSpotOn;
+
 out vec4 fragColor;
 
 void main() {
@@ -124,45 +156,59 @@ void main() {
   }
 
   vec3 N = normalize(vNormal);                    // 표면이 향하는 방향
-  // vec3 L = normalize(uLightPos - vWorldPos);   // 광원 쪽 방향 (point)
-  vec3 L = normalize(vec3(0.4, 0.8, 0.5));        // directional — 방향 하나로 고정
-  vec3 V = normalize(uViewPos  - vWorldPos);      // 눈 쪽 방향
+  vec3 V = normalize(uViewPos - vWorldPos);       // 눈 쪽 방향
 
-  // ──────────────────────────────────────────────────────────────────────
-  //  ★ 단계 1~4 — 아래에 세 항을 하나씩 더해 갑니다.
-  //
-  //   단계 1 (확산광)  vec3 diffuse = max(dot(N, L), 0.0) * uBaseColor * uLightColor;
-  //   단계 2 (환경광)  vec3 ambient = 0.08 * uBaseColor;
-  //   단계 3 (정반사)  vec3 R = reflect(-L, N);
-  //                    vec3 specular = pow(max(dot(R, V), 0.0), uShininess) * uLightColor * 0.5;
-  //   단계 4 (감쇠)    float d = length(uLightPos - vWorldPos);
-  //                    float att = 1.0 / (1.0 + 0.02 * d * d);
-  //
-  //  그리고 아래 한 줄을  fragColor = vec4(ambient + (diffuse + specular) * att, 1.0);
-  //  처럼 바꿉니다.
-  // ──────────────────────────────────────────────────────────────────────
+  // 환경광 — 모든 물체에 아주 약하게 적용
+  vec3 ambient = 0.045 * uBaseColor;
+  vec3 result = ambient;
 
-  // fragColor = vec4(uBaseColor, 1.0);              // ← 지금은 그냥 단색
+  // 1. Point Light — 원래 움직이던 노란 구체 위치의 따뜻한 광원
+  if (uPointOn) {
+    vec3 L = normalize(uPointPos - vWorldPos);
+    float diff = max(dot(N, L), 0.0);
+    vec3 diffuse = diff * uBaseColor * uPointColor;
 
-  //확산 반사
-  vec3 diffuse = max(dot(N, L), 0.0) * uBaseColor * uLightColor; // 변경
-  fragColor = vec4(diffuse, 1.0); // 변경
+    vec3 R = reflect(-L, N);
+    float spec = pow(max(dot(R, V), 0.0), uShininess);
+    vec3 specular = spec * uPointColor * 0.45;
 
-  // 환경광
-  vec3 ambient = 0.08 * uBaseColor;
-  fragColor = vec4(ambient + diffuse, 1.0);
+    float d = length(uPointPos - vWorldPos);
+    float att = 1.0 / (1.0 + 0.025 * d + 0.018 * d * d);
+    result += (diffuse + specular) * att;
+  }
 
-  // 정반사
-  vec3 R = reflect(-L, N);
-  vec3 specular = pow(max(dot(R, V), 0.0), uShininess) * uLightColor * 0.5;
-  fragColor = vec4(ambient + diffuse + specular, 1.0);
+  // 2. Directional Light — 멀리서 들어오는 차가운 별빛
+  if (uDirOn) {
+    vec3 L = normalize(-uDirDirection);
+    float diff = max(dot(N, L), 0.0);
+    vec3 diffuse = diff * uBaseColor * uDirColor;
 
+    vec3 R = reflect(-L, N);
+    float spec = pow(max(dot(R, V), 0.0), uShininess);
+    vec3 specular = spec * uDirColor * 0.30;
 
-  // 거리 감쇠
-  float d   = length(uLightPos - vWorldPos);
-  float att = 1.0 / (1.0 + 0.02 * d * d);
-  fragColor = vec4(ambient + (diffuse + specular) * att, 1.0);
+    result += diffuse * 0.58 + specular;
+  }
 
+  // 3. Spot Light — 보라색으로 특정 영역을 비추는 집중광
+  if (uSpotOn) {
+    vec3 L = normalize(uSpotPos - vWorldPos);
+    float diff = max(dot(N, L), 0.0);
+    vec3 diffuse = diff * uBaseColor * uSpotColor;
+
+    vec3 R = reflect(-L, N);
+    float spec = pow(max(dot(R, V), 0.0), uShininess);
+    vec3 specular = spec * uSpotColor * 0.40;
+
+    float d = length(uSpotPos - vWorldPos);
+    float att = 1.0 / (1.0 + 0.025 * d + 0.018 * d * d);
+    float cone = dot(normalize(-L), normalize(uSpotDirection));
+    float spotFactor = smoothstep(0.78, 0.94, cone);
+
+    result += (diffuse + specular) * att * spotFactor;
+  }
+
+  fragColor = vec4(result, 1.0);
 }
 `;
 
@@ -262,9 +308,25 @@ const program = createProgram(VS_SOURCE, FS_SOURCE);
 
 // uniform 의 위치를 이름으로 한 번만 찾아 둔다
 const U = {};
-['uModel','uView','uProj','uNormalMat','uBaseColor','uLightPos','uLightColor',
- 'uViewPos','uShininess','uEmissive'].forEach(function (n) {
+[
+  'uModel','uView','uProj','uNormalMat','uBaseColor','uLightPos','uLightColor',
+  'uViewPos','uShininess','uEmissive',
+  'uPointPos','uPointColor','uPointOn',
+  'uDirDirection','uDirColor','uDirOn',
+  'uSpotPos','uSpotDirection','uSpotColor','uSpotOn'
+].forEach(function (n) {
   U[n] = gl.getUniformLocation(program, n);
+});
+
+// 광원 ON/OFF 상태 — 숫자키 1, 2, 3으로 각각 전환
+let pointOn = true;
+let dirOn = true;
+let spotOn = true;
+
+window.addEventListener('keydown', function (e) {
+  if (e.key === '1') pointOn = !pointOn;
+  if (e.key === '2') dirOn = !dirOn;
+  if (e.key === '3') spotOn = !spotOn;
 });
 
 function createMesh(mesh) {
@@ -339,7 +401,7 @@ function render() {
   if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
   gl.viewport(0, 0, canvas.width, canvas.height);
 
-  gl.clearColor(0.04, 0.06, 0.10, 1.0);
+  gl.clearColor(0.025, 0.035, 0.075, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   const t = (performance.now() - startTime) / 1000;
@@ -352,35 +414,56 @@ function render() {
   const view = Mat4.lookAt(eye, [0, 1.0, 0], [0, 1, 0]);
   const proj = Mat4.perspective(Math.PI / 4, canvas.width / canvas.height, 0.1, 200);
 
-  // 광원 — 장면 위를 천천히 돈다
+  // 광원 — 세 가지 조명을 사용하며 광원 자체는 별도 물체로 추가하지 않는다.
+  // Point Light는 기존 노란 구체의 위치를 그대로 사용한다.
   const lightPos = [Math.cos(t * 0.4) * 5.0, 3.6, Math.sin(t * 0.4) * 5.0];
+  const spotPos = [2.5, 5.0, 2.5];
 
   gl.useProgram(program);                       // ← uniform 을 넣기 전에 반드시 먼저!
   gl.uniformMatrix4fv(U.uView, false, view);
   gl.uniformMatrix4fv(U.uProj, false, proj);
   gl.uniform3fv(U.uLightPos, lightPos);
-  gl.uniform3f(U.uLightColor, 1.0, 0.97, 0.90);
+  gl.uniform3f(U.uLightColor, 1.0, 0.78, 0.55);
   gl.uniform3fv(U.uViewPos, eye);
 
-  // 바닥
-  draw(plane, Mat4.identity(), [0.32, 0.34, 0.40], 8, false);
+  // 1. 따뜻한 청록-청색 계열 Point Light
+  gl.uniform3fv(U.uPointPos, lightPos);
+  gl.uniform3f(U.uPointColor, 0.18, 0.78, 0.95);
+  gl.uniform1i(U.uPointOn, pointOn ? 1 : 0);
 
-  // 행성 — 가운데에 떠서 돈다
+  // 2. 차가운 은백색 Directional Light
+  gl.uniform3f(U.uDirDirection, -0.65, -1.0, -0.35);
+  gl.uniform3f(U.uDirColor, 0.68, 0.82, 1.0);
+  gl.uniform1i(U.uDirOn, dirOn ? 1 : 0);
+
+  // 3. 보라색 Spot Light
+  gl.uniform3fv(U.uSpotPos, spotPos);
+  gl.uniform3f(U.uSpotDirection, -0.35, -1.0, -0.45);
+  gl.uniform3f(U.uSpotColor, 0.58, 0.30, 0.95);
+  gl.uniform1i(U.uSpotOn, spotOn ? 1 : 0);
+
+  // 바닥
+  draw(plane, Mat4.identity(), [0.10, 0.13, 0.20], 10, false);
+
+  // 행성 — 가운데에 떠서 천천히 돈다 (균등 스케일로 구형 유지)
   let m = Mat4.multiply(Mat4.translate(0, 1.6, 0), Mat4.rotateY(t * 0.3));
-  //m = Mat4.multi ply(m, Mat4.scale(1.3, 1.3, 1.3)); // 균등 스케일
-  m = Mat4.multiply(m, Mat4.scale(0.7, 2.2, 0.7)); // 비균등 스케일
-  draw(sphere, m, [0.80, 0.42, 0.32], 32, false);
+  m = Mat4.multiply(m, Mat4.scale(1.15, 1.15, 1.15)); // 균등 스케일: 완전한 구
+  draw(sphere, m, [0.20, 0.34, 0.48], 12, false);
 
   // 달 — 행성 둘레를 돈다
   let mm = Mat4.multiply(Mat4.translate(0, 1.6, 0), Mat4.rotateY(t * 0.9));
   mm = Mat4.multiply(mm, Mat4.translate(2.8, 0, 0));
   mm = Mat4.multiply(mm, Mat4.scale(0.42, 0.42, 0.42));
-  draw(sphere, mm, [0.72, 0.72, 0.76], 16, false);
+  draw(sphere, mm, [0.68, 0.80, 0.94], 96, false);
 
-  // 광원 위치 표시 — 스스로 빛나는 물체
-  let ml = Mat4.multiply(Mat4.translate(lightPos[0], lightPos[1], lightPos[2]),
-                         Mat4.scale(0.22, 0.22, 0.22));
-  draw(sphere, ml, [1.0, 0.93, 0.62], 1, true);
+  // 광원 위치 표시 — 기존 task1의 세 번째 구체를 그대로 유지
+  // 다른 두 광원은 조명 계산에만 참여하며 별도의 표시 구체를 만들지 않는다.
+  // 광원 위치 표시 — 조명 ON/OFF와 관계없이 항상 표시
+  let ml = Mat4.multiply(
+      Mat4.translate(lightPos[0], lightPos[1], lightPos[2]),
+      Mat4.scale(0.22, 0.22, 0.22)
+  );
+draw(sphere, ml, [1.0, 0.93, 0.62], 1, true);
 
   gl.bindVertexArray(null);
   requestAnimationFrame(render);
