@@ -131,7 +131,7 @@ Trilinear 필터링을 적용한 결과이다.
 
 ### 항성과의 거리 변화 결과
 
-거리 0: 항성과 가까운 상태
+거리 100: 항성과 먼 상태
 
 ![Distance 0](images/01_distance_000.png)
 
@@ -139,7 +139,7 @@ Trilinear 필터링을 적용한 결과이다.
 
 ![Distance 50](images/02_distance_050.png)
 
-거리 100: 항성과 먼 상태
+거리 0: 항성과 가까운 상태
 
 ![Distance 100](images/03_distance_100.png)
 
@@ -218,13 +218,3 @@ Trilinear 필터링을 적용한 결과이다.
 - Procedural Mask
 
 ---
-
-## 5. 제출 파일
-
-- task1.html
-- task1.js
-- task2.html
-- task2.js
-- week6.md
-- images/
-
